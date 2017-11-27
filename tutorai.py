@@ -15,7 +15,10 @@ def hello_world():
 @app.route('/get_sentence/', methods=["POST"])
 def main():
     input_data = request.get_json(request.data)
-    return jsonify(bot.get_sentence(input_data['message']))
+    answer = bot.get_sentence(input_data['message'])
+    answer['userMsgId'] = input_data['userMsgId']
+    answer['connectionid'] = input_data['connectionid']
+    return jsonify((answer)
 
 
 if __name__ == '__main__':
