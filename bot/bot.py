@@ -98,3 +98,30 @@ def transform_digit(sentence):
     return ' '.join(changed_words)
 
 
+class Bot:
+    def __init__(self, root_path):
+        nltk.download('stopwords')
+        #self.topic_model = None
+        #self.topic_model = load_model(root_path + '/static/topic_predict.model')
+        #if self.topic_model is not None:
+        #    print('topic model load')
+        self.answers, self.questions, self.t2v, self.tf_vect = pre_process(root_path)
+
+    def get_sentence(self, message):
+        vec = self.tf_vect.transform([message]).toarray()[0]
+        distance = 1.0
+        index = 0
+        for i, x in enumerate(self.answers):
+            dist = scipy.spatial.distance.cosine(vec, self.t2v[i])
+            if dist < distance:
+                distance = dist
+                index = i
+        print(self.answers[index])
+        if index < len(self.answers) - 1:
+            response = self.answers[index+1][0]
+        else:
+            response = self.answers[0][0]
+        lasttopicnumber = 0
+        lastrownumber = 0
+        state = 0
+        return {'message': response, 'errors': {'0 errors':'you are cool guy'}, 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state}
