@@ -96,4 +96,9 @@ class Bot:
             response = self.answers[index+1][0]
         else:
             response = self.answers[0][0]
-        return response
+	userMsgId = '1a9cd3c3-07ea-4f6b-bcb8-5387b3ff0895'
+	connectionid = 'e70d6890-0523-45ef-a2d1-02e7543ff328'
+	lasttopicnumber = 0
+	lastrownumber = 0
+	state = 0
+	return {'message': response, 'errors': {'0 errors':'you are cool guy'}, 'userMsgId': userMsgId, 'connectionId': connectionid, 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state}
