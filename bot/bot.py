@@ -116,7 +116,6 @@ class Bot:
             if dist < distance:
                 distance = dist
                 index = i
-        print(self.answers[index])
         if index < len(self.answers) - 1:
             response = self.answers[index+1][0]
         else:
