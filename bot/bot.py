@@ -108,11 +108,13 @@ class Bot:
             if dist < distance:
                 distance = dist
                 index = i
+        self.logger.debug('similar sentence: {}'.format(self.answers[index][0]))
         if index < len(self.answers) - 1:
-            response = self.answers[index+1][0]
+            index = index + 1
         else:
-            response = self.answers[0][0]
-        lasttopicnumber = 0
-        lastrownumber = 0
+            index = 0
+        response = self.answers[index][0]
+        lasttopicnumber = self.answers[index][1]
+        lastrownumber = self.answers[index][2]
         state = 0
         return {'message': response, 'errors': {'0 errors':'you are cool guy'}, 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state}
