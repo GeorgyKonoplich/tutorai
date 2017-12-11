@@ -9,6 +9,15 @@
             ],
             "propagate": "no",
             "level": "DEBUG"
+        },
+        "bot": {
+            "handlers": [
+                "file",
+                "console",
+                "graylog"
+            ],
+            "propagate": "no",
+            "level": "DEBUG"
         }
     },
     "handlers": {

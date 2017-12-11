@@ -26,4 +26,5 @@ sklearn==0.0
 tensorflow==1.4.0
 tensorflow-tensorboard==0.4.0rc3
 Werkzeug==0.12.2
+requests==2.9.1
 
