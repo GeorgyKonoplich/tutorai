@@ -81,6 +81,19 @@ def get_data_from_database(input_request):
                              'connectionId': input_request['connectionId']})
     return response.json()
 
+def choose_answer(answers, theme, index):
+    answer = []
+    for i, x in enumerate(answers):
+        if x[1] != theme:
+            continue
+        if x[2] == index:
+            answer.append(x)
+    if len(answer) > 0:
+        shuffle(answer)
+        return answer[0][0], answer[0][1], answer[0][2]
+    else:
+        return None, None, None
+
 
 class Bot:
     def __init__(self, root_path):
@@ -96,8 +109,10 @@ class Bot:
     def get_sentence(self, input_request):
         user_data = get_data_from_database(input_request=input_request)
         self.logger.debug('user data: {}'.format(user_data))
-
-        message = user_data[u'LastBotMessage'] + ' ' + user_data[u'LastUserMessage']
+	if user_data[u'LastBotMessage'] is None:
+		message = input_request['message']
+	else:
+        	message = user_data[u'LastBotMessage'] + ' ' + user_data[u'LastUserMessage']
         self.logger.debug('input message: {}'.format(message))
 
         vec = self.tf_vect.transform([message]).toarray()[0]
@@ -109,12 +124,16 @@ class Bot:
                 distance = dist
                 index = i
         self.logger.debug('similar sentence: {}'.format(self.answers[index][0]))
-        if index < len(self.answers) - 1:
-            index = index + 1
-        else:
-            index = 0
-        response = self.answers[index][0]
+        #if index < len(self.answers) - 1:
+        #    index = index + 1
+        #else:
+        #    index = 0
         lasttopicnumber = self.answers[index][1]
         lastrownumber = self.answers[index][2]
+	response, lasttopicnumber, lastrownumber = choose_answer(self.answers, lasttopicnumber, lastrownumber+1)
+	if response is None:
+        	response = 'Finish dialog. ' + self.answers[0][0]
+       		lasttopicnumber = self.answers[0][1]
+        	lastrownumber = self.answers[0][2]
         state = 0
         return {'message': response, 'errors': {'0 errors':'you are cool guy'}, 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state}
