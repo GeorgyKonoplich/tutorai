@@ -109,10 +109,12 @@ class Bot:
     def get_sentence(self, input_request):
         user_data = get_data_from_database(input_request=input_request)
         self.logger.debug('user data: {}'.format(user_data))
-	if user_data[u'LastBotMessage'] is None:
-		message = input_request['message']
-	else:
-        	message = user_data[u'LastBotMessage'] + ' ' + user_data[u'LastUserMessage']
+
+        if user_data[u'LastBotMessage'] is None:
+            message = input_request['message']
+        else:
+            message = user_data[u'LastBotMessage'] + ' ' + user_data[u'LastUserMessage']
+
         self.logger.debug('input message: {}'.format(message))
 
         vec = self.tf_vect.transform([message]).toarray()[0]
@@ -130,10 +132,10 @@ class Bot:
         #    index = 0
         lasttopicnumber = self.answers[index][1]
         lastrownumber = self.answers[index][2]
-	response, lasttopicnumber, lastrownumber = choose_answer(self.answers, lasttopicnumber, lastrownumber+1)
-	if response is None:
-        	response = 'Finish dialog. ' + self.answers[0][0]
-       		lasttopicnumber = self.answers[0][1]
-        	lastrownumber = self.answers[0][2]
+        response, lasttopicnumber, lastrownumber = choose_answer(self.answers, lasttopicnumber, lastrownumber+1)
+        if response is None:
+            response = 'Finish dialog. ' + self.answers[0][0]
+            lasttopicnumber = self.answers[0][1]
+            lastrownumber = self.answers[0][2]
         state = 0
         return {'message': response, 'errors': {'0 errors':'you are cool guy'}, 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state}
