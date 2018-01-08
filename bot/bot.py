@@ -5,6 +5,7 @@ import nltk
 import scipy
 
 from functions import pre_process, get_data_from_database, transform_digit, choose_answer
+from pb_py import main as API
 
 
 class Bot:
@@ -16,7 +17,7 @@ class Bot:
         #self.topic_model = load_model(root_path + '/static/topic_predict.model')
         #if self.topic_model is not None:
         #    print('topic model load')
-        self.answers, self.questions, self.t2v, self.tf_vect = pre_process(root_path)
+        #self.answers, self.questions, self.t2v, self.tf_vect = pre_process(root_path)
 
     def get_sentence(self, input_request):
         user_data = get_data_from_database(input_request=input_request)
@@ -51,5 +52,24 @@ class Bot:
             lasttopicnumber = self.answers[0][1]
             lastrownumber = self.answers[0][2]
         state = 0
+        r = requests.get('https://api.textgears.com/check.php', params={'text': message, 'key':'PhdFWWMyoGkzCp8q'})
+        return {'message': response, 'errors': r.json(), 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state}
+
+    def get_sentence1(self, input_request):
+        message = input_request['message']
+        self.logger.debug('input message: {}'.format(message))
+
+        host = 'aiaas.pandorabots.com'
+        user_key = '836ff6d5a6fb542fd562b893edb4a98d'
+        app_id = '1409617127698'
+        botname = 'tutor'
+
+        result = API.talk(user_key, app_id, host, botname, message)
+        response = result['response']
+
+        state = 0
+        lasttopicnumber = 0
+        lastrownumber = 0
+
         r = requests.get('https://api.textgears.com/check.php', params={'text': message, 'key':'PhdFWWMyoGkzCp8q'})
         return {'message': response, 'errors': r.json(), 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state}
