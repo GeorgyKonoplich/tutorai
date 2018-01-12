@@ -66,10 +66,12 @@ class Bot:
 
         result = API.talk(user_key, app_id, host, botname, message)
         response = result['response']
+        session_id = result['sessionid']
+
 
         state = 0
         lasttopicnumber = 0
         lastrownumber = 0
 
         r = requests.get('https://api.textgears.com/check.php', params={'text': message, 'key':'PhdFWWMyoGkzCp8q'})
-        return {'message': response, 'errors': r.json(), 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state}
+        return {'message': response, 'errors': r.json(), 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state, 'sessionId': session_id}
