@@ -11,7 +11,6 @@ from grammar import get_errors_plural_forn_nouns
 
 class Bot:
     def __init__(self, root_path):
-        nltk.download('stopwords')
         self.logger = logging.getLogger('bot')
         self.logger.debug('init')
         #self.topic_model = None
@@ -75,5 +74,6 @@ class Bot:
         lastrownumber = 0
 
         r = requests.get('https://api.textgears.com/check.php', params={'text': message, 'key':'PhdFWWMyoGkzCp8q'})
+	self.logger.debug('check plural form')
         errors = get_errors_plural_forn_nouns(message)
         return {'message': response, 'errors': r.json(), 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state, 'sessionId': session_id, 'tutor_errors': errors}
