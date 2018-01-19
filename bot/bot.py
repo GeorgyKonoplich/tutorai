@@ -6,6 +6,7 @@ import scipy
 
 from functions import pre_process, get_data_from_database, transform_digit, choose_answer
 from pb_py import main as API
+from grammar import get_errors_plural_forn_nouns
 
 
 class Bot:
@@ -74,4 +75,5 @@ class Bot:
         lastrownumber = 0
 
         r = requests.get('https://api.textgears.com/check.php', params={'text': message, 'key':'PhdFWWMyoGkzCp8q'})
-        return {'message': response, 'errors': r.json(), 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state, 'sessionId': session_id}
+        errors = get_errors_plural_forn_nouns(message)
+        return {'message': response, 'errors': r.json(), 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state, 'sessionId': session_id, 'tutor_errors': errors}
