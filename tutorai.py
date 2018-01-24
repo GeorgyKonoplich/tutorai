@@ -4,6 +4,7 @@ import logging
 from common.log import configure_loggers_with_file
 import aiml
 import os
+from google.cloud import translate
 #import graphitesend
 
 app = Flask(__name__)
@@ -51,6 +52,19 @@ def main():
     answer['connectionId'] = input_data['connectionId']
     logger.debug('Response is formed: {}'.format(answer))
     return jsonify(answer)
+
+
+@app.route('/translate_word/', methods=["POST"])
+def translate_word():
+    input_data = request.get_json(request.data)
+    translate_client = translate.Client.from_service_account_json(app.root_path + '/static/try-apis-23e63e8677c1.json')
+    target = 'ru'
+    word = input_data['word']
+    translation = translate_client.translate(
+        word,
+        target_language=target)
+
+    return jsonify({'translate': translation['translatedText'].encode('utf-8')})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
