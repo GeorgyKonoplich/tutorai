@@ -34,10 +34,12 @@ def check_to_be(word, tags, i):
     after_word = None
     after_word2 = None
     before_word = None
+    after_tag = None
     if i > 0:
         before_word = tags[i - 1][0]
     if i + 1 < len(tags):
         after_word = tags[i + 1][0]
+        after_tag = tags[i + 1][1]
     if i + 2 < len(tags):
         after_word2 = tags[i + 2][1]
     if word.lower() == 'i':
@@ -46,6 +48,8 @@ def check_to_be(word, tags, i):
                 return False
             else:
                 return True
+        elif is_verb(after_tag):
+            return  True
         else:
             if before_word in ['am', 'was', 'wasn\'t', 'not']:
                 return True
