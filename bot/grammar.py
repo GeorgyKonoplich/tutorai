@@ -93,6 +93,26 @@ def check_to_be(word, tags, i):
         return True
 
 
+def check_articles(i, tags):
+    if is_plural_noun(tags[i]):
+        if tags[i-1][0].lower() in ['a', 'an']:
+            return False
+        elif tags[i-1][0].lower() == 'the':
+            return True
+        elif is_adjective(tags[i-1][1]):
+            if tags[i-2][0].lower() in ['a', 'an']:
+                return False
+            if tags[i-2][0].lower() == 'the':
+                return True
+        else:
+            return False
+    if is_singular_noun(tags[i]):
+        if (not tags[i-1][0] in ['a', 'an', 'the']) and (not is_adjective(tags[i-1][1])):
+            return False
+        else:
+            return True
+    return True
+
 def check_there(i, tags):
     if tags[i][0].lower() == 'there':
         if tags[i + 1][0] in ['is', 'isn\'t']:
@@ -226,5 +246,13 @@ def get_errors_plural_forn_nouns(message):
                 errors.append({'ErrorType': 'error5 (there is/are)', 'Position': position, 'Correct': ''})
         except:
             print('error5')
+
+        try:
+            answer = check_articles(i, tags)
+            if not answer:
+                errors.append({'ErrorType': 'error6 (articles)', 'Position': position, 'Correct': ''})
+        except:
+            print('error6')
+
 
     return errors
