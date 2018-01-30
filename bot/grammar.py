@@ -93,6 +93,31 @@ def check_to_be(word, tags, i):
         return True
 
 
+def check_adverbs_frequency(i, tags):
+    if is_adverb(tags[i][1]):
+        if (tags[i][0] in ['always', 'usually', 'sometimes', 'never']) and (i == 0):
+            return False
+        elif tags[i][0] in ['always', 'usually', 'sometimes']:
+            if (not is_noun(tags[i-1][1])) and (not is_pronoun(tags[i-1][1])):
+                return False
+            else:
+                return is_verb(tags[i+1])
+        elif tags[i][0] == 'never':
+            if(not is_noun(tags[i - 1][1])) and (not is_pronoun(tags[i - 1][1])):
+                return False
+            else:
+                if is_verb(tags[i+1][1]):
+                    f = True
+                    for x in tags:
+                        if ('not' in x) or ('n\'t' in x):
+                            f = False
+                            break
+                    return f
+                else:
+                    return False
+    return True
+
+
 def check_articles(i, tags):
     if is_plural_noun(tags[i]):
         if tags[i-1][0].lower() in ['a', 'an']:
@@ -112,6 +137,7 @@ def check_articles(i, tags):
         else:
             return True
     return True
+
 
 def check_there(i, tags):
     if tags[i][0].lower() == 'there':
@@ -253,6 +279,10 @@ def get_errors_plural_forn_nouns(message):
                 errors.append({'ErrorType': 'error6 (articles)', 'Position': position, 'Correct': ''})
         except:
             print('error6')
-
-
+        try:
+            answer = check_adverbs_frequency(i, tags)
+            if not answer:
+                errors.append({'ErrorType': 'error7 (adverb of frequency)', 'Position': position, 'Correct': ''})
+        except:
+            print('error7')
     return errors
