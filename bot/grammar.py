@@ -26,8 +26,20 @@ def is_pronoun(tag):
     return tag in ['PRP$', 'PRP', 'WP', 'WP$']
 
 
+def is_numeral(tag):
+    return tag in ['JJ', 'CD']
+
+
 def get_tags(query):
     return nltk.pos_tag(word_tokenize(query))
+
+
+def is_singular_noun(tag):
+    return (is_noun(tag[1])) and (not inflect.singular_noun(tag[0]))
+
+
+def is_plural_noun(tag):
+    return (is_noun(tag[1])) and (inflect.singular_noun(tag[0]))
 
 
 def check_to_be(word, tags, i):
@@ -49,7 +61,7 @@ def check_to_be(word, tags, i):
             else:
                 return True
         elif is_verb(after_tag):
-            return  True
+            return True
         else:
             if before_word in ['am', 'was', 'wasn\'t', 'not']:
                 return True
@@ -81,8 +93,64 @@ def check_to_be(word, tags, i):
         return True
 
 
+def check_there(i, tags):
+    if tags[i][0].lower() == 'there':
+        if tags[i + 1][0] in ['is', 'isn\'t']:
+            if (tags[i + 2][0] in ['a', 'an']) and (is_singular_noun(tags[i + 3])):
+                return True
+            elif (tags[i + 2][0] in ['a', 'an']) and (is_adjective(tags[i + 3][1])) and (is_singular_noun(tags[i + 4])):
+                return True
+            elif (tags[i + 2][0] in ['one']) and (is_singular_noun(tags[i + 3])):
+                return True
+            else:
+                return False
+        elif tags[i + 1][0] in ['are']:
+            if is_plural_noun(tags[i + 2]):
+                return True
+            elif (tags[i + 2][0] == 'some') and (is_plural_noun(tags[i + 3])):
+                return True
+            elif (tags[i + 2][0] != 'one') and (is_numeral(tags[i + 2][1])) and (is_plural_noun(tags[i + 3])):
+                return True
+            else:
+                return False
+        elif tags[i + 1][0] in ['aren\'t']:
+            if is_plural_noun(tags[i + 2]):
+                return True
+            elif (tags[i + 2][0] == 'any') and (is_plural_noun(tags[i + 3])):
+                return True
+            elif (tags[i + 2][0] != 'one') and (is_numeral(tags[i + 2][1])) and (is_plural_noun(tags[i + 3])):
+                return True
+            else:
+                return False
+        elif tags[i - 1][0].lower() == 'is':
+            if (tags[i + 1][0] in ['a', 'an']) and (is_singular_noun(tags[i + 2])):
+                return True
+            elif (tags[i + 1][0] in ['a', 'an']) and (is_adjective(tags[i + 2][1])) and (is_singular_noun(tags[i + 3])):
+                return True
+            else:
+                return False
+        elif tags[i - 1][0].lower() == 'are':
+            if (tags[i + 1][0] == 'any') and (is_plural_noun(tags[i + 2])):
+                return True
+            else:
+                return False
+    elif tags[i][0].lower() == 'there\'s':
+        if (tags[i + 1][0] in ['a', 'an']) and (is_singular_noun(tags[i + 2])):
+            return True
+        elif (tags[i + 1][0] in ['a', 'an']) and (is_adjective(tags[i + 2][1])) and (is_singular_noun(tags[i + 3])):
+            return True
+        elif (tags[i + 1][0] != 'one') and (is_numeral(tags[i + 1][1])) and (is_plural_noun(tags[i + 2])):
+            return True
+        else:
+            return False
+    else:
+        return True
+
+
 def check_object_pronouns(word, before_word, before_prep):
-    if word in ['me', 'him', 'her', 'us', 'them']:
+    if (word.lower() in ['you', 'it']) and (before_word is None):
+        return True
+    if word in ['me', 'him', 'her', 'us', 'them', 'you', 'it']:
         if before_word[1] == 'IN':
             if is_verb(before_prep[1]):
                 return True
@@ -137,22 +205,26 @@ def get_errors_plural_forn_nouns(message):
             before_word = None
             after_word = None
             if i > 0:
-                before_word = tags[i-1][0]
-            if i+1 < len(tags):
-                after_word = tags[i+1][0]
+                before_word = tags[i - 1][0]
+            if i + 1 < len(tags):
+                after_word = tags[i + 1][0]
             answer = check_can_permission(before_word, after_word)
             if not answer:
                 errors.append({'ErrorType': 'error2 (can/cant - permission)', 'Position': position, 'Correct': ''})
             before_word = None
             before_prep = None
             if i > 0:
-                before_word = tags[i-1]
+                before_word = tags[i - 1]
             if i - 1 > 0:
-                before_prep = tags[i-2]
-            answer = check_object_pronouns(tag[0],before_word,before_prep)
+                before_prep = tags[i - 2]
+            answer = check_object_pronouns(tag[0], before_word, before_prep)
             if not answer:
                 errors.append({'ErrorType': 'error3 (Object Pronouns)', 'Position': position, 'Correct': ''})
+        try:
+            answer = check_there(i, tags)
+            if not answer:
+                errors.append({'ErrorType': 'error5 (there is/are)', 'Position': position, 'Correct': ''})
+        except:
+            print('error5')
 
     return errors
-
-
