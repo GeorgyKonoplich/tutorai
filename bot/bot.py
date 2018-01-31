@@ -1,5 +1,6 @@
 import requests
 import logging
+import json
 
 import nltk
 import scipy
@@ -74,6 +75,20 @@ class Bot:
         lastrownumber = 0
 
         r = requests.get('https://api.textgears.com/check.php', params={'text': message, 'key':'PhdFWWMyoGkzCp8q'})
-	self.logger.debug('check plural form')
+        self.logger.debug('check plural form')
         errors = get_errors_plural_forn_nouns(message)
-        return {'message': response, 'errors': r.json(), 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state, 'sessionId': session_id, 'tutor_errors': errors}
+
+        url = "https://languagetool.org/api/v2/check"
+
+        payload = "text=" + message + "&language=en-US&enabledOnly=false"
+        headers = {
+            'content-type': "application/x-www-form-urlencoded",
+            'accept': "application/json",
+            'cache-control': "no-cache",
+            'postman-token': "5c738aa3-20d4-263f-dbca-d3d747e36ec9"
+        }
+
+        response1 = requests.request("POST", url, data=payload, headers=headers)
+        lang_tool_answer = json.loads(response1.text)
+        print(lang_tool_answer)
+        return {'languagetool_errors':lang_tool_answer, 'message': response, 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state, 'sessionId': session_id, 'tutor_errors': errors}
