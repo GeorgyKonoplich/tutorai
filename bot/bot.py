@@ -65,9 +65,9 @@ class Bot:
         app_id = '1409617127698'
         botname = 'tutor'
 
-        result = API.talk(user_key, app_id, host, botname, message)
-        response = result['response']
-        session_id = result['sessionid']
+        #result = API.talk(user_key, app_id, host, botname, message)
+        #response = result['response']
+        #session_id = result['sessionid']
 
 
         state = 0
@@ -91,4 +91,6 @@ class Bot:
         response1 = requests.request("POST", url, data=payload, headers=headers)
         lang_tool_answer = json.loads(response1.text)
         print(lang_tool_answer)
-        return {'languagetool_errors':lang_tool_answer, 'message': response, 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state, 'sessionId': session_id, 'tutor_errors': errors}
+        # return {'languagetool_errors':lang_tool_answer, 'message': response, 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state, 'sessionId': session_id, 'tutor_errors': errors}
+        return {'languagetool_errors': lang_tool_answer, 'message': message, 'lasttopicnumber': lasttopicnumber,
+                'lastrownumber': lastrownumber, 'state': state, 'sessionId': 0, 'tutor_errors': errors}
