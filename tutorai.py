@@ -48,6 +48,15 @@ def main():
     input_data = request.get_json(request.data)
     logger.debug('Request received: {}'.format(input_data))
     answer = bot.get_sentence1(input_data)
+    answer['userMsgId'] = input_data['userMsgId']
+    answer['connectionId'] = input_data['connectionId']
+    logger.debug('Response is formed: {}'.format(answer))
+    return jsonify(answer)
+
+def main1():
+    input_data = request.get_json(request.data)
+    logger.debug('Request received: {}'.format(input_data))
+    answer = bot.get_sentence1(input_data)
     kernel = aiml.Kernel()
     if os.path.isfile("bot_brain.brn"):
         kernel.bootstrap(brainFile = "bot_brain.brn")
@@ -55,12 +64,19 @@ def main():
         kernel.bootstrap(learnFiles = os.path.abspath("aiml/std-startup.xml"), commands = "load aiml b")
         kernel.saveBrain("bot_brain.brn")
     print(answer['message'])
-    bot_response = kernel.respond(answer['message'])
-    answer['message'] = bot_response
-    answer['userMsgId'] = input_data['userMsgId']
-    answer['connectionId'] = input_data['connectionId']
-    logger.debug('Response is formed: {}'.format(answer))
-    return jsonify(answer)
+    message = answer['message']
+    while True:
+        if message == "quit":
+            exit()
+        elif message == "save":
+            kernel.saveBrain("bot_brain.brn")
+        else:
+            bot_response = kernel.respond(message)
+    	    answer['message'] = bot_response
+            answer['userMsgId'] = input_data['userMsgId']
+            answer['connectionId'] = input_data['connectionId']
+            logger.debug('Response is formed: {}'.format(answer))
+            return jsonify(answer)
 
 
 @app.route('/translate_word/', methods=["POST"])

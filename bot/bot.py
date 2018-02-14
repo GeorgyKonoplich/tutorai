@@ -63,11 +63,10 @@ class Bot:
         host = 'aiaas.pandorabots.com'
         user_key = '836ff6d5a6fb542fd562b893edb4a98d'
         app_id = '1409617127698'
-        botname = 'tutor'
-
-        #result = API.talk(user_key, app_id, host, botname, message)
-        #response = result['response']
-        #session_id = result['sessionid']
+        botname = 'tutor1'
+        result = API.talk(user_key, app_id, host, botname, message, clientID=input_request['userId'])
+        response = result['response']
+        session_id = result['sessionid']
 
 
         state = 0
@@ -76,7 +75,7 @@ class Bot:
 
         r = requests.get('https://api.textgears.com/check.php', params={'text': message, 'key':'PhdFWWMyoGkzCp8q'})
         self.logger.debug('check plural form')
-        errors = get_errors_plural_forn_nouns(message)
+        #errors = get_errors_plural_forn_nouns(message)
 
         url = "https://languagetool.org/api/v2/check"
 
@@ -90,7 +89,5 @@ class Bot:
 
         response1 = requests.request("POST", url, data=payload, headers=headers)
         lang_tool_answer = json.loads(response1.text)
-        print(lang_tool_answer)
-        # return {'languagetool_errors':lang_tool_answer, 'message': response, 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state, 'sessionId': session_id, 'tutor_errors': errors}
-        return {'languagetool_errors': lang_tool_answer, 'message': message, 'lasttopicnumber': lasttopicnumber,
-                'lastrownumber': lastrownumber, 'state': state, 'sessionId': 0, 'tutor_errors': errors}
+        return {'languagetool_errors':lang_tool_answer, 'message': response, 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state, 'sessionId': session_id, 'tutor_errors': {}}
+        #return {'languagetool_errors': lang_tool_answer, 'message': message, 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state, 'sessionId': 0, 'tutor_errors': {}}
