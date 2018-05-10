@@ -3,52 +3,55 @@ import logging
 import json
 
 import nltk
-import scipy
 
-from functions import pre_process, get_data_from_database, transform_digit, choose_answer
-from pb_py import main as API
-from grammar import get_errors_plural_forn_nouns
+from functions import pre_process, choose_answer, find_similar_sentence
+from common.cache.service import set_data, get_data
 
 
 class Bot:
     def __init__(self, root_path):
         self.logger = logging.getLogger('bot')
         self.logger.debug('init')
-        #self.topic_model = None
-        #self.topic_model = load_model(root_path + '/static/topic_predict.model')
-        #if self.topic_model is not None:
-        #    print('topic model load')
-        self.answers, self.questions, self.t2v, self.tf_vect = pre_process(root_path)
+        self.documents, self.all_sentences, self.tf_vect = pre_process(root_path)
+        self.root_path = root_path
 
     def get_sentence(self, input_request):
-        #user_data = get_data_from_database(input_request=input_request)
-        #self.logger.debug('user data: {}'.format(user_data))
         message = input_request['message']
+        user_id = input_request['userId']
+        theme = input_request['theme']
         self.logger.debug('input message: {}'.format(message))
 
-        vec = self.tf_vect.transform([message]).toarray()[0]
-        distance = 1.0
-        index = 0
-        for i, x in enumerate(self.answers):
-            dist = scipy.spatial.distance.cosine(vec, self.t2v[i])
-            if dist < distance:
-                distance = dist
-                index = i
-        self.logger.debug('similar sentence: {}'.format(self.answers[index][0]))
+        user_data = get_data(user_id, self.root_path)
+        last_document = None
+        last_node = None
+        if user_data is not None:
+            last_document = user_data['document']
+            last_node = user_data['node']
+        self.logger.debug('last document: {}, last node: {}'.format(last_document, last_node))
 
-        lasttopicnumber = self.answers[index][1]
-        lastrownumber = self.answers[index][2]
-        response, lasttopicnumber, lastrownumber = choose_answer(self.answers, lasttopicnumber, lastrownumber+1)
+        distance, document, node = find_similar_sentence(
+            input_sentence=message,
+            tf_vect= self.tf_vect,
+            documents=self.documents,
+            theme=last_document,
+            sentence_id=last_node
+        )
+
+        if document is None:
+            response = "I haven't suitable answer =("
+        else:
+            self.logger.debug('similar sentence: {}, distance: {}, document: {}'.
+                              format(self.documents[document][node]['sentence'], distance, document))
+            response_node = choose_answer(
+                documents=self.documents,
+                document=document,
+                node=node
+            )
+            response = self.documents[document][response_node]['sentence']
+
         self.logger.debug('answer sentence: {}'.format(response))
 
-        if response is None:
-            response = 'Finish dialog. ' + self.answers[0][0]
-            lasttopicnumber = self.answers[0][1]
-            lastrownumber = self.answers[0][2]
-            self.logger.debug('Finish answer sentence: {}'.format(response))
-
         url = "https://languagetool.org/api/v2/check"
-
         payload = "text=" + message + "&language=en-US&enabledOnly=false"
         headers = {
             'content-type': "application/x-www-form-urlencoded",
@@ -56,44 +59,11 @@ class Bot:
             'cache-control': "no-cache",
             'postman-token': "5c738aa3-20d4-263f-dbca-d3d747e36ec9"
         }
+        lang_tool_response = requests.request("POST", url, data=payload, headers=headers)
+        lang_tool_answer = json.loads(lang_tool_response.text)
 
-        response1 = requests.request("POST", url, data=payload, headers=headers)
-        lang_tool_answer = json.loads(response1.text)
-        r = requests.get('https://api.textgears.com/check.php', params={'text': message, 'key':'PhdFWWMyoGkzCp8q'})
+        textgears_response = requests.get('https://api.textgears.com/check.php', params={'text': message, 'key':'PhdFWWMyoGkzCp8q'})
 
-        return {'message': response, 'errors': r.json(), 'languagetool_errors':lang_tool_answer}
+        set_data({user_id: {'document': document, 'node': node}}, self.root_path)
 
-    def get_sentence1(self, input_request):
-        message = input_request['message']
-        self.logger.debug('input message: {}'.format(message))
-
-        host = 'aiaas.pandorabots.com'
-        user_key = '836ff6d5a6fb542fd562b893edb4a98d'
-        app_id = '1409617127698'
-        botname = 'tutor1'
-        result = API.talk(user_key, app_id, host, botname, message, clientID=input_request['userId'])
-        response = result['response']
-        session_id = result['sessionid']
-
-
-        state = 0
-        lasttopicnumber = 0
-        lastrownumber = 0
-
-        r = requests.get('https://api.textgears.com/check.php', params={'text': message, 'key':'PhdFWWMyoGkzCp8q'})
-        self.logger.debug('check plural form')
-        #errors = get_errors_plural_forn_nouns(message)
-
-        url = "https://languagetool.org/api/v2/check"
-
-        payload = "text=" + message + "&language=en-US&enabledOnly=false"
-        headers = {
-            'content-type': "application/x-www-form-urlencoded",
-            'accept': "application/json",
-            'cache-control': "no-cache",
-            'postman-token': "5c738aa3-20d4-263f-dbca-d3d747e36ec9"
-        }
-
-        response1 = requests.request("POST", url, data=payload, headers=headers)
-        lang_tool_answer = json.loads(response1.text)
-        return {'languagetool_errors':lang_tool_answer, 'message': response, 'lasttopicnumber': lasttopicnumber, 'lastrownumber': lastrownumber, 'state': state, 'sessionId': session_id, 'tutor_errors': {}}
+        return {'message': response, 'textgears_response_errors': textgears_response.json(), 'language_tool_errors': lang_tool_answer}

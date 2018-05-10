@@ -1,58 +1,77 @@
 import os
 import re
-import requests
 import inflect
+import scipy
 
-import numpy as np
-
-from keras.models import load_model
 from random import shuffle
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+
 def pre_process(root_path):
-    classes = np.load(root_path + '/static/classes.npy').item()
-    print(classes)
-    dialog_folder = root_path + '/static/dialogs_new_format/'
+    dialog_folder = root_path + '/static/dialogs_vd/'
+    documents = {}
     all_sentences = []
-    targets = []
     for txt in os.listdir(dialog_folder):
         lines = open(dialog_folder + txt, 'r').readlines()
-        lines = list(filter(lambda x: x != '\n', lines))
-        prepared_sentences = []
-        for s in lines:
-            sentence = ''.join(x for x in s if
-                                   x.isalpha() or x.isdigit() or x == ' ' or x == '.' or x == '?' or x == '!' or x == ',' or x == '\'')
-            sentence = re.sub(' +', ' ', sentence)
-            prepared_sentences.append(sentence)
-        all_sentences.append(prepared_sentences)
-        target = ''.join([x if not x.isdigit() else '' for x in txt.split('.')[0]])
-        targets.append(target)
-
-    answers = []
-    questions = []
-    texts = []
-    for i, theme in enumerate(all_sentences):
-        words = all_sentences[i][0].split()
-        s = ' '.join([word for word in words[2:]])
-        questions.append((s, classes[targets[i]]))
-        for j, line in enumerate(all_sentences[i]):
-            if line[0] != ' ':
-                words = line.split()
-                index = int(words[0].split('.')[0])
-                line = ' '.join([word for word in words[2:]])
+        filename = ''.join([x if not x.isdigit() else '' for x in txt.split('.')[0]])
+        dialog_graph = {}
+        is_nodes = False
+        for line in lines:
+            if line == '\n':
+                is_nodes = True
+                continue
+            if is_nodes:
+                line = re.sub(' +', ' ', line)
+                x = int(line.split(' ')[0])
+                y = int(line.split(' ')[1])
+                dialog_graph[x]['nodes'].append(y)
             else:
-                words = line.split()
-                line = ' '.join([word for word in words[1:]])
+                sentence = ''.join(x for x in line if x.isalpha()
+                                   or x.isdigit() or x == ' '
+                                   or x == '.' or x == '?' or x == '!'
+                                   or x == ',' or x == '\'')
+                sentence = re.sub(' +', ' ', sentence)
+                idx = int(sentence.split('.')[0])
+                reply = '.'.join(sentence.split('.')[1:])
+                if reply[0] == ' ':
+                    reply = reply[1:]
+                dialog_graph[idx] = {'sentence': reply, 'nodes': []}
+                all_sentences.append(reply)
 
-            line = transform_digit(line) #todo: think about this
-            #mean = word_averaging(w2v, line.split())
-            texts.append(line)
-            answers.append((line, classes[targets[i]], index, i))
+        documents[filename] = dialog_graph
+        tf_vect = TfidfVectorizer(preprocessor=None)
+        tf_vect.fit(all_sentences)
+    return documents, all_sentences, tf_vect
 
-    tf_vect = TfidfVectorizer(preprocessor=None)
-    tf_vect.fit(texts)
-    text2vec = list(tf_vect.transform(texts).toarray())
-    return answers, questions, text2vec, tf_vect
+
+def find_similar_sentence(input_sentence, tf_vect, documents, theme=None, sentence_id=None):
+    min_distance = 1.0
+    min_document = None
+    min_node = None
+    for document in documents:
+        if (theme is None) or (document == theme):
+            for node in documents[document]:
+                if (sentence_id is None) or (node in documents[theme][sentence_id]['nodes']):
+                    sentence = documents[document][node]['sentence']
+                    input_vec = tf_vect.transform([input_sentence]).toarray()[0]
+                    vec = tf_vect.transform([sentence]).toarray()[0]
+                    distance = scipy.spatial.distance.cosine(input_vec, vec)
+                    if distance < min_distance:
+                        min_distance = distance
+                        min_document = document
+                        min_node = node
+    return min_distance, min_document, min_node
+
+
+def choose_answer(documents, document, node):
+    answer = []
+    for x in documents[document][node]['nodes']:
+        answer.append(x)
+    if len(answer) > 0:
+        shuffle(answer)
+        return answer[0]
+    else:
+        return None
 
 
 def transform_digit(sentence):
@@ -70,24 +89,3 @@ def transform_digit(sentence):
         x = x + stop
         changed_words.append(x)
     return ' '.join(changed_words)
-
-
-def get_data_from_database(input_request):
-    response = requests.get('http://tutorai-env.33zqcsby6q.us-east-1.elasticbeanstalk.com/api/messagesapi/GetLastUserChain',
-                     params={'userId': input_request['userId'],
-                             'connectionId': input_request['connectionId']})
-    return response.json()
-
-
-def choose_answer(answers, theme, index):
-    answer = []
-    for i, x in enumerate(answers):
-        if x[1] != theme:
-            continue
-        if x[2] == index:
-            answer.append(x)
-    if len(answer) > 0:
-        shuffle(answer)
-        return answer[0][0], answer[0][1], answer[0][2]
-    else:
-        return None, None, None

@@ -1,0 +1,6 @@
+{
+  "host": "localhost",
+  "port": 6379,
+  "db": 0,
+  "default_ttl_in_days": 3
+}

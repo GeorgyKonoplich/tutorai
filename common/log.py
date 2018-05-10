@@ -10,7 +10,7 @@ BASE_LOG_DIR = '/home/georgy/logs/'
 
 def configure_loggers_with_file(base_dir):
     print(base_dir)
-    logging_param_file = os.path.join(base_dir, 'templates/logging_params.json')
+    logging_param_file = os.path.join(base_dir, 'configs/logging_params.json')
     with open(logging_param_file, 'r') as f:
         logger_config = json.load(f)
 
