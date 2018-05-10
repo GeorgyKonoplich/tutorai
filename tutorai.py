@@ -5,13 +5,11 @@ from common.log import configure_loggers_with_file
 import aiml
 import os
 from google.cloud import translate
-#import graphitesend
 
 app = Flask(__name__)
 configure_loggers_with_file(app.root_path)
 logger = logging.getLogger('tutor')
 bot = Bot(app.root_path)
-#g = graphitesend.init(graphite_port=3031,graphite_server='127.0.0.1')
 
 
 @app.route('/')
@@ -47,7 +45,7 @@ def ask():
 def main():
     input_data = request.get_json(request.data)
     logger.debug('Request received: {}'.format(input_data))
-    answer = bot.get_sentence1(input_data)
+    answer = bot.get_sentence(input_data)
     answer['userMsgId'] = input_data['userMsgId']
     answer['connectionId'] = input_data['connectionId']
     logger.debug('Response is formed: {}'.format(answer))
