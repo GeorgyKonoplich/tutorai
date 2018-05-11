@@ -29,7 +29,7 @@ def pre_process(root_path):
                 sentence = ''.join(x for x in line if x.isalpha()
                                    or x.isdigit() or x == ' '
                                    or x == '.' or x == '?' or x == '!'
-                                   or x == ',' or x == '\'')
+                                   or x == ',' or x == '\'' or x == '’' or x == '-')
                 sentence = re.sub(' +', ' ', sentence)
                 idx = int(sentence.split('.')[0])
                 reply = '.'.join(sentence.split('.')[1:])

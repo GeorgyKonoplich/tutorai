@@ -1,10 +1,10 @@
 import requests
 import logging
 import json
-
+import random
 import nltk
 
-from functions import pre_process, choose_answer, find_similar_sentence
+from bot.functions import pre_process, choose_answer, find_similar_sentence
 from common.cache.service import set_data, get_data
 
 
@@ -29,28 +29,56 @@ class Bot:
             last_node = user_data['node']
         self.logger.debug('last document: {}, last node: {}'.format(last_document, last_node))
 
-        distance, document, node = find_similar_sentence(
+        document, response_node = self.find_reply(
+            message=message,
+            last_document=last_document,
+            last_node=last_node
+        )
+        self.logger.debug('response document: {}, response node: {}'.format(document, response_node))
+        response = self.documents[document][response_node]['sentence']
+        self.logger.debug('answer sentence: {}'.format(response))
+        lang_tool_answer, textgears_response = self.get_errors(message)
+        set_data({user_id: {'document': document, 'node': response_node}}, self.root_path)
+
+        return {'message': response, 'textgears_response_errors': textgears_response.json(), 'language_tool_errors': lang_tool_answer}
+
+    def find_reply(self, message, last_document, last_node):
+        distance, document, similar_node = find_similar_sentence(
             input_sentence=message,
-            tf_vect= self.tf_vect,
+            tf_vect=self.tf_vect,
             documents=self.documents,
             theme=last_document,
             sentence_id=last_node
         )
-
+        response_node = None
         if document is None:
-            response = "I haven't suitable answer =("
+            if (last_document is not None) and (last_node is not None) and (
+                    len(self.documents[last_document][last_node]['nodes']) > 0):
+                response_node = choose_answer(
+                    documents=self.documents,
+                    document=last_document,
+                    node=self.documents[last_document][last_node]['nodes'][0]
+                )
+                document = last_document
         else:
             self.logger.debug('similar sentence: {}, distance: {}, document: {}'.
-                              format(self.documents[document][node]['sentence'], distance, document))
+                              format(self.documents[document][similar_node]['sentence'], distance, document))
             response_node = choose_answer(
                 documents=self.documents,
                 document=document,
-                node=node
+                node=similar_node
             )
-            response = self.documents[document][response_node]['sentence']
 
-        self.logger.debug('answer sentence: {}'.format(response))
+        if response_node is None:
+            self.logger.debug('choose random theme')
+            files = ['Sports', 'Movie', 'Family', 'Theatre']
+            x = random.randint(0, 3)
+            document = files[x]
+            response_node = 1
+        return document, response_node
 
+    @staticmethod
+    def get_errors(message):
         url = "https://languagetool.org/api/v2/check"
         payload = "text=" + message + "&language=en-US&enabledOnly=false"
         headers = {
@@ -62,8 +90,7 @@ class Bot:
         lang_tool_response = requests.request("POST", url, data=payload, headers=headers)
         lang_tool_answer = json.loads(lang_tool_response.text)
 
-        textgears_response = requests.get('https://api.textgears.com/check.php', params={'text': message, 'key':'PhdFWWMyoGkzCp8q'})
+        textgears_response = requests.get('https://api.textgears.com/check.php',
+                                          params={'text': message, 'key': 'PhdFWWMyoGkzCp8q'})
 
-        set_data({user_id: {'document': document, 'node': node}}, self.root_path)
-
-        return {'message': response, 'textgears_response_errors': textgears_response.json(), 'language_tool_errors': lang_tool_answer}
+        return lang_tool_answer, textgears_response
