@@ -14,13 +14,17 @@ class Bot:
         self.logger.debug('init')
         self.documents, self.all_sentences, self.tf_vect = pre_process(root_path)
         self.root_path = root_path
+        self.themes = {'0': '_Friends', '1': '_Keeping fit_Fhealthy lifestyle', '2': '_Music', '3': 'Hobbies', '4': '+HOLIDAYS_',
+        '5': 'Books', '6': 'Describe your day', '7': 'Dreams_aspirations  (life-goal edition)', '8': 'Dreams_aspirations',
+        '9': 'English competence', '10': 'Family', '11': 'Movie', '12': 'Sports', '13': 'Theatre', '14': 'Travelling'}
 
     def get_sentence(self, input_request):
         message = input_request['message']
         user_id = input_request['userId']
         theme = input_request['theme']
         self.logger.debug('input message: {}'.format(message))
-
+        #print(self.documents.keys())
+        input_theme = self.themes[str(theme)]
         user_data = get_data(user_id, self.root_path)
         last_document = None
         last_node = None
@@ -28,12 +32,15 @@ class Bot:
             last_document = user_data['document']
             last_node = user_data['node']
         self.logger.debug('last document: {}, last node: {}'.format(last_document, last_node))
-
-        document, response_node = self.find_reply(
-            message=message,
-            last_document=last_document,
-            last_node=last_node
-        )
+        if (last_document is None) or (last_document != input_theme):
+            document = input_theme
+            response_node = 1
+        else:
+            document, response_node = self.find_reply(
+                message=message,
+                last_document=last_document,
+                last_node=last_node
+            )
         self.logger.debug('response document: {}, response node: {}'.format(document, response_node))
         response = self.documents[document][response_node]['sentence']
         self.logger.debug('answer sentence: {}'.format(response))
